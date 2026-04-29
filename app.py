@@ -52,7 +52,13 @@ def sugerir_pagador(data, asistentes):
 @app.route("/")
 def index():
     data = load()
-    return render_template("index.html", personas=PERSONAS, sugerido=None, asistentes=[])
+    return render_template(
+        "index.html",
+        personas=PERSONAS,
+        sugerido=None,
+        asistentes=[],
+        data=data   # 🔥 AÑADIDO
+    )
 
 
 @app.route("/preview", methods=["POST"])
@@ -61,7 +67,13 @@ def preview():
     asistentes = request.form.getlist("asistentes")
 
     if not asistentes:
-        return render_template("index.html", personas=PERSONAS, sugerido=None, asistentes=[])
+        return render_template(
+            "index.html",
+            personas=PERSONAS,
+            sugerido=None,
+            asistentes=[],
+            data=data   # 🔥 AÑADIDO
+        )
 
     sugerido = sugerir_pagador(data, asistentes)
 
@@ -69,7 +81,8 @@ def preview():
         "index.html",
         personas=PERSONAS,
         sugerido=sugerido,
-        asistentes=asistentes
+        asistentes=asistentes,
+        data=data   # 🔥 AÑADIDO
     )
 
 

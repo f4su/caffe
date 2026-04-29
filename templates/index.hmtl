@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Café Control</title>
+    <style>
+        body {
+            font-family: Arial;
+            margin: 30px;
+            background: #f4f4f4;
+        }
+
+        .container {
+            display: flex;
+            gap: 20px;
+        }
+
+        .box {
+            flex: 1;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        select, input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+        }
+
+        button {
+            padding: 10px;
+            width: 100%;
+            background: black;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        .persona {
+            background: #eee;
+            padding: 8px;
+            margin: 5px 0;
+            border-radius: 5px;
+        }
+
+        h2 {
+            color: green;
+        }
+    </style>
+</head>
+
+<body>
+
+<h1>☕ Café Control</h1>
+
+<h2>Le toca pagar: {{ pagador }}</h2>
+
+<div class="container">
+
+    <!-- IZQUIERDA -->
+    <div class="box">
+        <h3>🟦 Registrar café</h3>
+
+        <form action="/registrar" method="post">
+
+            <label>Pagador:</label>
+            <select name="pagador">
+                {% for p in personas %}
+                    <option value="{{ p }}">{{ p }}</option>
+                {% endfor %}
+            </select>
+
+            <label>Beneficiarios (coma separados):</label>
+            <input name="beneficiarios" placeholder="JoseG, Kike, Irantxu">
+
+            <button type="submit">Registrar</button>
+
+        </form>
+    </div>
+
+    <!-- DERECHA -->
+    <div class="box">
+        <h3>🟨 Estado</h3>
+
+        {% for p in personas %}
+            <div class="persona">
+                <b>{{ p }}</b><br>
+                Debe: {{ data[p]['debe'] }}€<br>
+                Pagado: {{ data[p]['pagado'] }}€<br>
+                Balance: {{ balances[p] }}€
+            </div>
+        {% endfor %}
+    </div>
+
+</div>
+
+</body>
+</html>

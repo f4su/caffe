@@ -7,12 +7,12 @@ app = Flask(__name__)
 ARCHIVO = "data.json"
 
 CONSUMOS = {
-    "JoseG": "cafe_solo",
-    "Irantxu": "sandwich",
-    "JoseS": "cafe_con_leche",
-    "Kike": "cafe_con_leche",
     "Enrique": "cafe_con_leche",
-    "Iñaki": "cafe_con_leche"
+    "Irantxu": "sandwich",
+    "Iñaki": "cafe_con_leche",
+    "JoseG": "cafe_solo",
+    "JoseS": "cafe_con_leche",
+    "Kike": "cafe_con_leche"
 }
 
 PRECIOS = {

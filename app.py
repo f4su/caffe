@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect
 import json
 import os
+import random
 
 app = Flask(__name__)
 
@@ -8,7 +9,7 @@ ARCHIVO = "data.json"
 
 CONSUMOS = {
     "Enrique": "cafe",
-    "Irantzu": "cafe",
+    "Irantxu": "cafe",
     "Iñaki": "cafe",
     "JoseG": "cafe",
     "JoseS": "cafe",
@@ -44,9 +45,24 @@ def balance(data, p):
     return data[p]["pagado"] - data[p]["consumido"]
 
 
+# 🔥 LÓGICA MEJORADA DE SUGERENCIA
 def sugerir_pagador(data, asistentes):
     balances = {p: balance(data, p) for p in asistentes}
-    return min(balances, key=balances.get)
+
+    # 1. peor balance (el que más debe)
+    min_balance = min(balances.values())
+    candidatos = [p for p in asistentes if balances[p] == min_balance]
+
+    # si solo hay uno, lo devolvemos
+    if len(candidatos) == 1:
+        return candidatos[0]
+
+    # 2. desempate: el que menos ha pagado
+    min_pagado = min(data[p]["pagado"] for p in candidatos)
+    candidatos = [p for p in candidatos if data[p]["pagado"] == min_pagado]
+
+    # si aún hay empate
+    return random.choice(candidatos)
 
 
 @app.route("/")
@@ -104,26 +120,6 @@ def registrar():
 
     # el pagador paga por todos menos él
     data[pagador]["pagado"] += (n - 1)
-
-    save(data)
-
-    return redirect("/")
-
-
-# 🔧 NUEVA RUTA PARA AJUSTAR
-@app.route("/ajustar", methods=["POST"])
-def ajustar():
-    data = load()
-
-    persona = request.form["persona"]
-    cantidad = int(request.form["cantidad"])
-
-    if persona in data:
-        data[persona]["pagado"] -= cantidad
-
-        # evitar negativos
-        if data[persona]["pagado"] < 0:
-            data[persona]["pagado"] = 0
 
     save(data)
 

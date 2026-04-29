@@ -50,10 +50,28 @@ def coste(persona):
     return PRECIOS[CONSUMOS[persona]]
 
 
+def sugerir_pagador(data, asistentes):
+    # quien ha pagado más vs lo que debe dentro del grupo
+    balances = {}
+
+    for p in asistentes:
+        balances[p] = data[p]["pagado"] - data[p]["debe"]
+
+    # el que más debe (más negativo) es el sugerido pagador
+    return min(balances, key=balances.get)
+
+
 @app.route("/")
 def index():
     data = load()
-    return render_template("index.html", personas=PERSONAS, data=data)
+    sugerido = sugerir_pagador(data, PERSONAS)
+
+    return render_template(
+        "index.html",
+        personas=PERSONAS,
+        data=data,
+        sugerido=sugerido
+    )
 
 
 @app.route("/registrar", methods=["POST"])
@@ -61,28 +79,26 @@ def registrar():
     data = load()
 
     pagador = request.form["pagador"]
-    asistentes = request.form["asistentes"]
+    asistentes = request.form.getlist("asistentes")
 
-    asistentes = [a.strip() for a in asistentes.split(",") if a.strip()]
+    if not asistentes:
+        return redirect("/")
 
     if pagador not in asistentes:
         asistentes.append(pagador)
 
-    # 🔥 calcular total del grupo
-    total_grupo = 0
+    total = 0
+
     for a in asistentes:
-        total_grupo += coste(a)
+        total += coste(a)
 
-    # 🔥 cada uno paga su consumo
+    # pagador paga todo menos lo suyo
+    data[pagador]["pagado"] += (total - coste(pagador))
+
+    # los demás deben su consumo
     for a in asistentes:
-        if a == pagador:
-            # el pagador NO se cuenta a sí mismo
-            continue
-
-        data[a]["debe"] += coste(a)
-
-    # 🔥 el pagador paga todo menos su propia consumición
-    data[pagador]["pagado"] += (total_grupo - coste(pagador))
+        if a != pagador:
+            data[a]["debe"] += coste(a)
 
     save(data)
 

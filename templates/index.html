@@ -5,7 +5,17 @@
 </head>
 <body>
 
-<h1>☕ Cafés</h1>
+<h1>☕ Cafés equilibrados</h1>
+
+<!-- 🔥 CAFÉS PAGADOS -->
+<h3>☕ Cafés pagados</h3>
+<ul>
+    {% for p in personas %}
+        <li>
+            {{ p }} → {{ data[p]["pagado"] }} cafés pagados
+        </li>
+    {% endfor %}
+</ul>
 
 <hr>
 

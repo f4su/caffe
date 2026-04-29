@@ -12,12 +12,13 @@ CONSUMOS = {
     "Iñaki": "cafe_con_leche",
     "JoseG": "cafe_solo",
     "JoseS": "cafe_con_leche",
-    "Kike": "cafe_con_leche"
+    "Kike": "cafe_con_leche_des"
 }
 
 PRECIOS = {
     "cafe_solo": 1.20,
     "cafe_con_leche": 1.50,
+    "cafe_con_leche_des": 1.50,
     "sandwich": 3.00
 }
 
@@ -47,7 +48,8 @@ def save(data):
 
 
 def coste(p):
-    return PRECIOS[CONSUMOS[p]]
+    tipo = CONSUMOS.get(p)
+    return PRECIOS.get(tipo, 0)
 
 
 def sugerir_pagador(data, asistentes):

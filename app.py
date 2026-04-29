@@ -24,7 +24,6 @@ PRECIOS = {
 PERSONAS = list(CONSUMOS.keys())
 
 
-# 🟢 Cargar datos SIEMPRE seguros
 def load():
     if os.path.exists(ARCHIVO):
         try:
@@ -35,7 +34,6 @@ def load():
     else:
         data = {}
 
-    # 🔥 asegurar estructura completa siempre
     for p in PERSONAS:
         if p not in data:
             data[p] = {"debe": 0.0, "pagado": 0.0}

@@ -24,11 +24,23 @@ PRECIOS = {
 PERSONAS = list(CONSUMOS.keys())
 
 
+# 🟢 Cargar datos SIEMPRE seguros
 def load():
     if os.path.exists(ARCHIVO):
-        with open(ARCHIVO, "r") as f:
-            return json.load(f)
-    return {p: {"debe": 0.0, "pagado": 0.0} for p in PERSONAS}
+        try:
+            with open(ARCHIVO, "r") as f:
+                data = json.load(f)
+        except:
+            data = {}
+    else:
+        data = {}
+
+    # 🔥 asegurar estructura completa siempre
+    for p in PERSONAS:
+        if p not in data:
+            data[p] = {"debe": 0.0, "pagado": 0.0}
+
+    return data
 
 
 def save(data):
@@ -71,10 +83,12 @@ def registrar():
     total = 0
 
     for b in beneficiarios:
-        data[b]["debe"] += coste(b)
-        total += coste(b)
+        if b in data:
+            data[b]["debe"] += coste(b)
+            total += coste(b)
 
-    data[pagador]["pagado"] += total
+    if pagador in data:
+        data[pagador]["pagado"] += total
 
     save(data)
 

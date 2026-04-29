@@ -5,9 +5,9 @@
 </head>
 <body>
 
-<h1>☕ Control de café</h1>
+<h1>☕ Café inteligente</h1>
 
-<h3>Sugerido pagador: <b>{{ sugerido }}</b></h3>
+<h3>Sugerencia pagador del grupo: <b>{{ sugerido or "elige asistentes" }}</b></h3>
 
 <hr>
 
@@ -24,33 +24,37 @@
 
 <hr>
 
-<h3>Registrar café</h3>
+<h3>1. Selecciona asistentes</h3>
 
-<form action="/registrar" method="post">
-
-    <label>Pagador (sugerido: {{ sugerido }}):</label>
-    <select name="pagador">
-        {% for p in personas %}
-            <option value="{{ p }}" {% if p == sugerido %}selected{% endif %}>
-                {{ p }}
-            </option>
-        {% endfor %}
-    </select>
-
-    <br><br>
-
-    <label>Asistentes:</label>
-    <br>
-
+<form action="/preview" method="post">
     {% for p in personas %}
-        <input type="checkbox" name="asistentes" value="{{ p }}">
+        <input type="checkbox" name="asistentes" value="{{ p }}"
+        {% if asistentes and p in asistentes %}checked{% endif %}>
         {{ p }} <br>
     {% endfor %}
 
     <br>
-
-    <button type="submit">Registrar</button>
+    <button type="submit">Calcular sugerencia</button>
 </form>
+
+<hr>
+
+{% if sugerido %}
+<h3>2. Confirmar registro</h3>
+
+<form action="/registrar" method="post">
+
+    <input type="hidden" name="pagador" value="{{ sugerido }}">
+
+    {% for p in asistentes %}
+        <input type="hidden" name="asistentes" value="{{ p }}">
+    {% endfor %}
+
+    <p>Pagador sugerido: <b>{{ sugerido }}</b></p>
+
+    <button type="submit">Registrar café</button>
+</form>
+{% endif %}
 
 </body>
 </html>

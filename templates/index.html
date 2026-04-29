@@ -1,43 +1,20 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Cafetería</title>
-    <meta charset="UTF-8">
-</head>
-<body>
-    <h1>Control de café ☕</h1>
+<h3>Registrar café</h3>
 
-    <h2>Pagador recomendado: {{ pagador }}</h2>
+<form action="/registrar" method="post">
 
-    <h3>Personas</h3>
-    <ul>
+    <label>Pagador:</label>
+    <select name="pagador">
         {% for p in personas %}
-            <li>
-                {{ p }} |
-                Debe: {{ data[p]["debe"] }} € |
-                Pagado: {{ data[p]["pagado"] }} €
-            </li>
+            <option value="{{ p }}">{{ p }}</option>
         {% endfor %}
-    </ul>
+    </select>
 
-    <h3>Registrar consumo</h3>
+    <br><br>
 
-    <form action="/registrar" method="post">
-        <label>Pagador:</label>
-        <select name="pagador">
-            {% for p in personas %}
-                <option value="{{ p }}">{{ p }}</option>
-            {% endfor %}
-        </select>
+    <label>Asistentes (separados por coma):</label>
+    <input type="text" name="asistentes" placeholder="JoseG, Kike, Irantxu">
 
-        <br><br>
+    <br><br>
 
-        <label>Beneficiarios (separados por coma):</label>
-        <input type="text" name="beneficiarios" placeholder="JoseG, Kike">
-
-        <br><br>
-
-        <button type="submit">Registrar</button>
-    </form>
-</body>
-</html>
+    <button type="submit">Registrar café</button>
+</form>

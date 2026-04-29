@@ -55,21 +55,13 @@ def sugerir_pagador(data, asistentes):
         p: data[p]["pagado"] - data[p]["debe"]
         for p in asistentes
     }
-
-    # el más "en negativo" es el que debería pagar
     return min(balances, key=balances.get)
 
 
 @app.route("/")
 def index():
     data = load()
-
-    return render_template(
-        "index.html",
-        personas=PERSONAS,
-        data=data,
-        sugerido=None
-    )
+    return render_template("index.html", personas=PERSONAS, sugerido=None, asistentes=[])
 
 
 @app.route("/preview", methods=["POST"])
@@ -78,19 +70,13 @@ def preview():
     asistentes = request.form.getlist("asistentes")
 
     if not asistentes:
-        return render_template(
-            "index.html",
-            personas=PERSONAS,
-            data=data,
-            sugerido=None
-        )
+        return render_template("index.html", personas=PERSONAS, sugerido=None, asistentes=[])
 
     sugerido = sugerir_pagador(data, asistentes)
 
     return render_template(
         "index.html",
         personas=PERSONAS,
-        data=data,
         sugerido=sugerido,
         asistentes=asistentes
     )

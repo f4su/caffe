@@ -11,6 +11,7 @@ CONSUMOS = {
     "Enrique": "cafe",
     "Irantxu": "cafe",
     "Iñaki": "cafe",
+    "Leire": "cafe",
     "JoseG": "cafe",
     "JoseS": "cafe",
     "Kike": "cafe"

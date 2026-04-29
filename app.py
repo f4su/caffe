@@ -7,19 +7,12 @@ app = Flask(__name__)
 ARCHIVO = "data.json"
 
 CONSUMOS = {
-    "Enrique": "cafe_con_leche_des",
-    "Irantxu": "sandwich",
-    "Iñaki": "cafe_con_leche",
-    "JoseG": "cafe_solo",
-    "JoseS": "cafe_con_leche",
-    "Kike": "cafe_con_leche"
-}
-
-PRECIOS = {
-    "cafe_solo": 1.70,
-    "cafe_con_leche": 1.80,
-    "cafe_con_leche_des": 1.80,
-    "sandwich": 3.00
+    "Enrique": "cafe",
+    "Irantxu": "cafe",
+    "Iñaki": "cafe",
+    "JoseG": "cafe",
+    "JoseS": "cafe",
+    "Kike": "cafe"
 }
 
 PERSONAS = list(CONSUMOS.keys())
@@ -37,7 +30,7 @@ def load():
 
     for p in PERSONAS:
         if p not in data:
-            data[p] = {"debe": 0.0, "pagado": 0.0}
+            data[p] = {"consumido": 0, "pagado": 0}
 
     return data
 
@@ -47,27 +40,19 @@ def save(data):
         json.dump(data, f, indent=4)
 
 
-def coste(p):
-    tipo = CONSUMOS.get(p)
-    return PRECIOS.get(tipo, 0)
+def balance(data, p):
+    return data[p]["pagado"] - data[p]["consumido"]
 
 
 def sugerir_pagador(data, asistentes):
-    balances = {
-        p: data[p]["pagado"] - data[p]["debe"]
-        for p in asistentes
-    }
+    balances = {p: balance(data, p) for p in asistentes}
     return min(balances, key=balances.get)
 
 
 @app.route("/")
 def index():
-    return render_template(
-        "index.html",
-        personas=PERSONAS,
-        sugerido=None,
-        asistentes=[]
-    )
+    data = load()
+    return render_template("index.html", personas=PERSONAS, sugerido=None, asistentes=[])
 
 
 @app.route("/preview", methods=["POST"])
@@ -76,12 +61,7 @@ def preview():
     asistentes = request.form.getlist("asistentes")
 
     if not asistentes:
-        return render_template(
-            "index.html",
-            personas=PERSONAS,
-            sugerido=None,
-            asistentes=[]
-        )
+        return render_template("index.html", personas=PERSONAS, sugerido=None, asistentes=[])
 
     sugerido = sugerir_pagador(data, asistentes)
 
@@ -103,13 +83,14 @@ def registrar():
     if pagador not in asistentes:
         asistentes.append(pagador)
 
-    total = sum(coste(p) for p in asistentes)
+    n = len(asistentes)
 
+    # cada uno consume 1 café
     for a in asistentes:
-        if a != pagador:
-            data[a]["debe"] += coste(a)
+        data[a]["consumido"] += 1
 
-    data[pagador]["pagado"] += (total - coste(pagador))
+    # el pagador paga por todos menos él
+    data[pagador]["pagado"] += (n - 1)
 
     save(data)
 

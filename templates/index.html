@@ -1,15 +1,14 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Café</title>
+    <title>Café balance</title>
 </head>
 <body>
 
-<h1>☕ Café</h1>
+<h1>☕ Cafés equilibrados</h1>
 
 <hr>
 
-<!-- 1. Selección de asistentes -->
 <h3>1. Selecciona asistentes</h3>
 
 <form action="/preview" method="post">
@@ -21,13 +20,11 @@
     {% endfor %}
 
     <br>
-
-    <button type="submit">Calcular pagador sugerido</button>
+    <button type="submit">Calcular sugerencia</button>
 </form>
 
 <hr>
 
-<!-- 2. SOLO aparece si hay sugerido -->
 {% if sugerido %}
 
 <h3>2. Confirmar pagador</h3>

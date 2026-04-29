@@ -7,7 +7,7 @@
 
 <h1>☕ Cafés equilibrados</h1>
 
-<!-- 🔥 CAFÉS PAGADOS -->
+<!-- CAFÉS PAGADOS -->
 <h3>☕ Cafés pagados</h3>
 <ul>
     {% for p in personas %}
@@ -16,6 +16,40 @@
         </li>
     {% endfor %}
 </ul>
+
+<!-- 🔧 BOTÓN AJUSTE -->
+<button onclick="document.getElementById('ajuste').style.display='block'">
+    ⚙️ Ajustar cafés
+</button>
+
+<!-- 🔧 PANEL AJUSTE -->
+<div id="ajuste" style="display:none; border:1px solid black; padding:10px; margin-top:10px; width:250px;">
+
+    <h4>Ajustar cafés pagados</h4>
+
+    <form action="/ajustar" method="post">
+
+        <label>Persona:</label>
+        <select name="persona">
+            {% for p in personas %}
+                <option value="{{ p }}">{{ p }}</option>
+            {% endfor %}
+        </select>
+
+        <br><br>
+
+        <label>Restar cafés:</label>
+        <input type="number" name="cantidad" min="1" value="1">
+
+        <br><br>
+
+        <button type="submit">Guardar</button>
+        <button type="button" onclick="document.getElementById('ajuste').style.display='none'">
+            Cancelar
+        </button>
+
+    </form>
+</div>
 
 <hr>
 

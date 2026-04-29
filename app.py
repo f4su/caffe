@@ -8,7 +8,7 @@ ARCHIVO = "data.json"
 
 CONSUMOS = {
     "Enrique": "cafe",
-    "Irantxu": "cafe",
+    "Irantzu": "cafe",
     "Iñaki": "cafe",
     "JoseG": "cafe",
     "JoseS": "cafe",
@@ -57,7 +57,7 @@ def index():
         personas=PERSONAS,
         sugerido=None,
         asistentes=[],
-        data=data   # 🔥 AÑADIDO
+        data=data
     )
 
 
@@ -72,7 +72,7 @@ def preview():
             personas=PERSONAS,
             sugerido=None,
             asistentes=[],
-            data=data   # 🔥 AÑADIDO
+            data=data
         )
 
     sugerido = sugerir_pagador(data, asistentes)
@@ -82,7 +82,7 @@ def preview():
         personas=PERSONAS,
         sugerido=sugerido,
         asistentes=asistentes,
-        data=data   # 🔥 AÑADIDO
+        data=data
     )
 
 
@@ -104,6 +104,26 @@ def registrar():
 
     # el pagador paga por todos menos él
     data[pagador]["pagado"] += (n - 1)
+
+    save(data)
+
+    return redirect("/")
+
+
+# 🔧 NUEVA RUTA PARA AJUSTAR
+@app.route("/ajustar", methods=["POST"])
+def ajustar():
+    data = load()
+
+    persona = request.form["persona"]
+    cantidad = int(request.form["cantidad"])
+
+    if persona in data:
+        data[persona]["pagado"] -= cantidad
+
+        # evitar negativos
+        if data[persona]["pagado"] < 0:
+            data[persona]["pagado"] = 0
 
     save(data)
 

@@ -50,23 +50,10 @@ def coste(persona):
     return PRECIOS[CONSUMOS[persona]]
 
 
-def quien_paga(data):
-    balances = {p: data[p]["pagado"] - data[p]["debe"] for p in PERSONAS}
-    return min(balances, key=balances.get), balances
-
-
 @app.route("/")
 def index():
     data = load()
-    pagador, balances = quien_paga(data)
-
-    return render_template(
-        "index.html",
-        personas=PERSONAS,
-        pagador=pagador,
-        data=data,
-        balances=balances
-    )
+    return render_template("index.html", personas=PERSONAS, data=data)
 
 
 @app.route("/registrar", methods=["POST"])
@@ -74,25 +61,29 @@ def registrar():
     data = load()
 
     pagador = request.form["pagador"]
-    beneficiarios = request.form["beneficiarios"]
+    asistentes = request.form["asistentes"]
 
-    beneficiarios = [b.strip() for b in beneficiarios.split(",") if b.strip()]
+    asistentes = [a.strip() for a in asistentes.split(",") if a.strip()]
 
-    total = 0
+    if pagador not in asistentes:
+        asistentes.append(pagador)
 
-    for b in beneficiarios:
-        if b in data:
-            data[b]["debe"] += coste(b)
-            total += coste(b)
+    # 🔥 calcular total del grupo
+    total_grupo = 0
+    for a in asistentes:
+        total_grupo += coste(a)
 
-    if pagador in data:
-        data[pagador]["pagado"] += total
+    # 🔥 cada uno paga su consumo
+    for a in asistentes:
+        if a == pagador:
+            # el pagador NO se cuenta a sí mismo
+            continue
+
+        data[a]["debe"] += coste(a)
+
+    # 🔥 el pagador paga todo menos su propia consumición
+    data[pagador]["pagado"] += (total_grupo - coste(pagador))
 
     save(data)
 
     return redirect("/")
-
-
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)

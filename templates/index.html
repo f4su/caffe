@@ -1,20 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Café tracker</title>
+</head>
+<body>
+
+<h1>☕ Control de café</h1>
+
+<h3>Sugerido pagador: <b>{{ sugerido }}</b></h3>
+
+<hr>
+
+<h3>Personas</h3>
+<ul>
+    {% for p in personas %}
+        <li>
+            {{ p }} |
+            Debe: {{ data[p]["debe"] }} € |
+            Pagado: {{ data[p]["pagado"] }} €
+        </li>
+    {% endfor %}
+</ul>
+
+<hr>
+
 <h3>Registrar café</h3>
 
 <form action="/registrar" method="post">
 
-    <label>Pagador:</label>
+    <label>Pagador (sugerido: {{ sugerido }}):</label>
     <select name="pagador">
         {% for p in personas %}
-            <option value="{{ p }}">{{ p }}</option>
+            <option value="{{ p }}" {% if p == sugerido %}selected{% endif %}>
+                {{ p }}
+            </option>
         {% endfor %}
     </select>
 
     <br><br>
 
-    <label>Asistentes (separados por coma):</label>
-    <input type="text" name="asistentes" placeholder="JoseG, Kike, Irantxu">
+    <label>Asistentes:</label>
+    <br>
 
-    <br><br>
+    {% for p in personas %}
+        <input type="checkbox" name="asistentes" value="{{ p }}">
+        {{ p }} <br>
+    {% endfor %}
 
-    <button type="submit">Registrar café</button>
+    <br>
+
+    <button type="submit">Registrar</button>
 </form>
+
+</body>
+</html>

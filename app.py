@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect
+from flask import Flask, render_template, request, redirect, flash
 import random
 from db import (
     init_db,
@@ -11,6 +11,9 @@ from db import (
 )
 
 app = Flask(__name__)
+
+# 🔐 necesario para flash messages
+app.secret_key = "cafe_secret_key"
 
 # inicializar DB
 init_db()
@@ -28,11 +31,12 @@ CONSUMOS = {
 PERSONAS = list(CONSUMOS.keys())
 
 
-# 🔄 cargar datos desde PostgreSQL
+# =========================
+# 🔄 CARGAR DATOS
+# =========================
 def load():
     data = get_data() or {}
 
-    # asegurar estructura
     for p in PERSONAS:
         if p not in data:
             data[p] = {"consumido": 0, "pagado": 0}
@@ -40,7 +44,9 @@ def load():
     return data
 
 
-# 💾 guardar datos en PostgreSQL
+# =========================
+# 💾 GUARDAR DATOS
+# =========================
 def save(data):
     save_data(data)
 
@@ -49,7 +55,9 @@ def balance(data, p):
     return data[p]["pagado"] - data[p]["consumido"]
 
 
-# 🔥 LÓGICA DE SUGERENCIA
+# =========================
+# 🔥 SUGERENCIA
+# =========================
 def sugerir_pagador(data, asistentes):
     balances = {p: balance(data, p) for p in asistentes}
 
@@ -66,7 +74,7 @@ def sugerir_pagador(data, asistentes):
 
 
 # =========================
-# 🌐 VISTA PRINCIPAL
+# 🌐 HOME
 # =========================
 @app.route("/")
 def index():
@@ -114,7 +122,7 @@ def preview():
 
 
 # =========================
-# ☕ REGISTRAR PAGO
+# ☕ REGISTRAR CAFÉ
 # =========================
 @app.route("/registrar", methods=["POST"])
 def registrar():
@@ -140,14 +148,14 @@ def registrar():
 
     save(data)
 
-    # 🧾 guardar transacción
+    # guardar transacción
     add_transaction(pagador, asistentes, cantidad)
 
     return redirect("/")
 
 
 # =========================
-# ❌ BORRAR ÚLTIMO LOG (UNDO)
+# ❌ UNDO ÚLTIMO LOG
 # =========================
 @app.route("/undo", methods=["POST"])
 def undo():
@@ -158,5 +166,8 @@ def undo():
     if tx:
         data = revert_transaction(data, tx)
         save(data)
+
+        # 🔔 mensaje visible en UI
+        flash(f"Se ha deshecho el último pago: {tx['pagador']} pagó {tx['cantidad']} cafés")
 
     return redirect("/")

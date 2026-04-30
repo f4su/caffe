@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, redirect
 import random
-from db import init_db, get_data, save_data
+from db import init_db, get_data, save_data, add_transaction, get_transactions
 
 app = Flask(__name__)
 
@@ -60,12 +60,15 @@ def sugerir_pagador(data, asistentes):
 @app.route("/")
 def index():
     data = load()
+    transactions = get_transactions()
+
     return render_template(
         "index.html",
         personas=PERSONAS,
         sugerido=None,
         asistentes=[],
-        data=data
+        data=data,
+        transactions=transactions
     )
 
 
@@ -80,7 +83,8 @@ def preview():
             personas=PERSONAS,
             sugerido=None,
             asistentes=[],
-            data=data
+            data=data,
+            transactions=get_transactions()
         )
 
     sugerido = sugerir_pagador(data, asistentes)
@@ -90,7 +94,8 @@ def preview():
         personas=PERSONAS,
         sugerido=sugerido,
         asistentes=asistentes,
-        data=data
+        data=data,
+        transactions=get_transactions()
     )
 
 
@@ -105,12 +110,17 @@ def registrar():
         asistentes.append(pagador)
 
     n = len(asistentes)
+    cantidad = n - 1
 
+    # actualizar lógica de cafés
     for a in asistentes:
         data[a]["consumido"] += 1
 
-    data[pagador]["pagado"] += (n - 1)
+    data[pagador]["pagado"] += cantidad
 
     save(data)
+
+    # 🧾 guardar transacción
+    add_transaction(pagador, asistentes, cantidad)
 
     return redirect("/")

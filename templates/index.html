@@ -24,6 +24,11 @@
         .popup.info {
             background: #3498db;
         }
+
+        ul {
+            max-height: 500px;
+            overflow-y: auto;
+        }
     </style>
 </head>
 
@@ -32,7 +37,7 @@
 <h1>☕ Cafés equilibrados</h1>
 
 <!-- ========================= -->
-<!-- POPUPS FLASH (SUCCESS / UNDO) -->
+<!-- POPUPS -->
 <!-- ========================= -->
 {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
@@ -80,24 +85,24 @@
 
         <ul>
 
-            <!-- 🧾 TRANSACCIONES -->
-            {% for t in transactions %}
+            <!-- 🧾 TRANSACCIONES (últimas 7 visibles) -->
+            {% for t in transactions[-7:] %}
                 <li>
                     <b>{{ t.pagador }}</b>
-                    pagó {{ t.cantidad }} cafés a:
+                    pagó {{ t.cantidad }} cafés a:<br>
                     {{ t.asistentes | join(", ") }}
                 </li>
             {% endfor %}
 
-            <!-- 📌 EVENTOS (undo / add logs visuales) -->
-            {% for e in events %}
+            <!-- 📌 EVENTOS (logs visuales) -->
+            {% for e in events[-7:] %}
                 {% if e.type == "undo" %}
                     <li style="color:#e74c3c;">
                         ❌ {{ e.message }}
                     </li>
                 {% else %}
                     <li style="color:#2ecc71;">
-                        ✅ {{ e.message }}
+                        🟢 {{ e.message }}
                     </li>
                 {% endif %}
             {% endfor %}
@@ -171,7 +176,7 @@
 </div>
 
 <!-- ========================= -->
-<!-- MODAL CONFIRMACIÓN BORRAR -->
+<!-- MODAL BORRAR -->
 <!-- ========================= -->
 <div id="confirmDelete"
      style="display:none;
@@ -188,7 +193,7 @@
     <div style="background:white; padding:20px; border-radius:10px; width:300px; text-align:center;">
 
         <h3>⚠️ ¿Seguro que quieres borrar el último log?</h3>
-        <p>Se revertirá la última compra, pero el historial la conservará.</p>
+        <p>Se revertirá la última compra, pero quedará registrada en el historial visual.</p>
 
         <div style="display:flex; justify-content:space-between; margin-top:20px;">
 

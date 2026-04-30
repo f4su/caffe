@@ -20,6 +20,10 @@
         .popup.error {
             background: #e74c3c;
         }
+
+        .popup.info {
+            background: #3498db;
+        }
     </style>
 </head>
 
@@ -27,11 +31,13 @@
 
 <h1>☕ Cafés equilibrados</h1>
 
-<!-- POPUP MENSAJES -->
+<!-- ========================= -->
+<!-- POPUPS FLASH (SUCCESS / UNDO) -->
+<!-- ========================= -->
 {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
         {% for category, message in messages %}
-            <div class="popup {% if category == 'error' %}error{% endif %}">
+            <div class="popup {{ category }}">
                 {{ message }}
             </div>
 
@@ -44,28 +50,27 @@
     {% endif %}
 {% endwith %}
 
+<!-- ========================= -->
 <!-- CONTENEDOR SUPERIOR -->
+<!-- ========================= -->
 <div style="display:flex; gap:20px; align-items:flex-start;">
 
-    <!-- IZQUIERDA -->
+    <!-- CAFÉS PAGADOS -->
     <div style="border:1px solid #ccc; padding:10px; width:300px;">
         <h3>☕ Cafés pagados</h3>
         <ul>
             {% for p in personas %}
-                <li>
-                    {{ p }} → {{ data[p]["pagado"] }} cafés pagados
-                </li>
+                <li>{{ p }} → {{ data[p]["pagado"] }} cafés pagados</li>
             {% endfor %}
         </ul>
     </div>
 
-    <!-- DERECHA HISTORIAL -->
-    <div style="border:1px solid #ccc; padding:10px; width:400px;">
+    <!-- HISTORIAL -->
+    <div style="border:1px solid #ccc; padding:10px; width:450px;">
 
         <h3 style="display:flex; justify-content:space-between; align-items:center;">
             🧾 Historial
 
-            <!-- BOTÓN ABRIR MODAL -->
             <button type="button"
                     onclick="document.getElementById('confirmDelete').style.display='flex'"
                     style="background:red; color:white; border:none; padding:5px 10px; cursor:pointer;">
@@ -74,6 +79,8 @@
         </h3>
 
         <ul>
+
+            <!-- 🧾 TRANSACCIONES -->
             {% for t in transactions %}
                 <li>
                     <b>{{ t.pagador }}</b>
@@ -81,6 +88,20 @@
                     {{ t.asistentes | join(", ") }}
                 </li>
             {% endfor %}
+
+            <!-- 📌 EVENTOS (undo / add logs visuales) -->
+            {% for e in events %}
+                {% if e.type == "undo" %}
+                    <li style="color:#e74c3c;">
+                        ❌ {{ e.message }}
+                    </li>
+                {% else %}
+                    <li style="color:#2ecc71;">
+                        ✅ {{ e.message }}
+                    </li>
+                {% endif %}
+            {% endfor %}
+
         </ul>
 
     </div>
@@ -89,7 +110,9 @@
 
 <hr>
 
+<!-- ========================= -->
 <!-- SELECCIÓN + PAGADOR -->
+<!-- ========================= -->
 <div style="display:flex; gap:30px; align-items:flex-start;">
 
     <!-- ASISTENTES -->
@@ -165,20 +188,16 @@
     <div style="background:white; padding:20px; border-radius:10px; width:300px; text-align:center;">
 
         <h3>⚠️ ¿Seguro que quieres borrar el último log?</h3>
-        <p>Esta acción revertirá el último pago realizado.</p>
+        <p>Se revertirá la última compra, pero el historial la conservará.</p>
 
         <div style="display:flex; justify-content:space-between; margin-top:20px;">
 
-            <!-- CANCELAR -->
-            <button onclick="document.getElementById('confirmDelete').style.display='none'"
-                    style="padding:8px 12px;">
+            <button onclick="document.getElementById('confirmDelete').style.display='none'">
                 Cancelar
             </button>
 
-            <!-- CONFIRMAR BORRADO -->
             <form action="/undo" method="post" style="margin:0;">
-                <button type="submit"
-                        style="background:red; color:white; border:none; padding:8px 12px; cursor:pointer;">
+                <button style="background:red; color:white; border:none; padding:8px 12px;">
                     Borrar
                 </button>
             </form>

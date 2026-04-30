@@ -1,5 +1,8 @@
 from flask import Flask, render_template, request, redirect, flash
 import random
+from datetime import datetime
+import calendar
+
 from db import (
     init_db,
     get_data,
@@ -134,6 +137,9 @@ def registrar():
     if pagador not in asistentes:
         asistentes.append(pagador)
 
+    # 🚫 excluir pagador del listado visual
+    asistentes_sin_pagador = [a for a in asistentes if a != pagador]
+
     n = len(asistentes)
     cantidad = n - 1
 
@@ -148,11 +154,24 @@ def registrar():
 
     save(data)
 
-    # 🧾 evento real
+    # 🧾 guardar evento real
     add_transaction(pagador, asistentes, cantidad)
 
-    # 🎉 mensaje UI
-    flash(f"☕ Café registrado: {pagador} pagó {cantidad} cafés")
+    # 📅 fecha formateada
+    now = datetime.now()
+    dia = now.day
+    mes_num = now.month
+    mes_nombre = calendar.month_name[mes_num].upper()
+
+    asistentes_txt = ", ".join(asistentes_sin_pagador) if asistentes_sin_pagador else "nadie"
+
+    mensaje = (
+        f"{dia}, {mes_num} {mes_nombre}: "
+        f"{pagador} pagó {cantidad} cafés a:\n"
+        f"{asistentes_txt}"
+    )
+
+    flash(mensaje)
 
     return redirect("/")
 
@@ -171,13 +190,16 @@ def undo():
         data = revert_transaction(data, tx)
         save(data)
 
-        # 🧾 evento visual de cancelación (NO afecta lógica)
+        # evento visual de cancelación
         add_transaction(
             pagador="❌ CANCELADO",
             asistentes=tx["asistentes"],
-            cantidad=0  # importante: no altera balances
+            cantidad=0
         )
 
-        flash(f"❌ Último café cancelado: {tx['pagador']} pagó {tx['cantidad']} cafés")
+        flash(
+            f"❌ Último café cancelado: "
+            f"{tx['pagador']} pagó {tx['cantidad']} cafés"
+        )
 
     return redirect("/")

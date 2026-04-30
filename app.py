@@ -1,15 +1,15 @@
 from flask import Flask, render_template, request, redirect
-import json
-import os
 import random
+from db import init_db, get_data, save_data
 
 app = Flask(__name__)
 
-ARCHIVO = "data.json"
+# inicializar DB
+init_db()
 
 CONSUMOS = {
     "Enrique": "cafe",
-    "Irantxu": "cafe",
+    "Irantzu": "cafe",
     "Iñaki": "cafe",
     "Leire": "cafe",
     "JoseG": "cafe",
@@ -20,16 +20,11 @@ CONSUMOS = {
 PERSONAS = list(CONSUMOS.keys())
 
 
+# 🔄 cargar datos desde PostgreSQL
 def load():
-    if os.path.exists(ARCHIVO):
-        try:
-            with open(ARCHIVO, "r") as f:
-                data = json.load(f)
-        except:
-            data = {}
-    else:
-        data = {}
+    data = get_data() or {}
 
+    # asegurar estructura
     for p in PERSONAS:
         if p not in data:
             data[p] = {"consumido": 0, "pagado": 0}
@@ -37,9 +32,9 @@ def load():
     return data
 
 
+# 💾 guardar datos en PostgreSQL
 def save(data):
-    with open(ARCHIVO, "w") as f:
-        json.dump(data, f, indent=4)
+    save_data(data)
 
 
 def balance(data, p):
@@ -50,19 +45,15 @@ def balance(data, p):
 def sugerir_pagador(data, asistentes):
     balances = {p: balance(data, p) for p in asistentes}
 
-    # 1. peor balance (el que más debe)
     min_balance = min(balances.values())
     candidatos = [p for p in asistentes if balances[p] == min_balance]
 
-    # si solo hay uno, lo devolvemos
     if len(candidatos) == 1:
         return candidatos[0]
 
-    # 2. desempate: el que menos ha pagado
     min_pagado = min(data[p]["pagado"] for p in candidatos)
     candidatos = [p for p in candidatos if data[p]["pagado"] == min_pagado]
 
-    # si aún hay empate
     return random.choice(candidatos)
 
 
@@ -115,11 +106,9 @@ def registrar():
 
     n = len(asistentes)
 
-    # cada uno consume 1 café
     for a in asistentes:
         data[a]["consumido"] += 1
 
-    # el pagador paga por todos menos él
     data[pagador]["pagado"] += (n - 1)
 
     save(data)

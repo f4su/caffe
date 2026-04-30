@@ -161,7 +161,7 @@ def add_event(event_type, message):
     conn.close()
 
 
-def get_events(limit=20):
+def get_events(limit=7):  # 🔥 CLAVE: solo últimos 7
     conn = get_connection()
     cur = conn.cursor()
 

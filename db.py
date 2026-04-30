@@ -20,7 +20,7 @@ def init_db():
     conn = get_connection()
     cur = conn.cursor()
 
-    # tabla estado (JSON global)
+    # estado global (JSON)
     cur.execute("""
         CREATE TABLE IF NOT EXISTS app_data (
             id SERIAL PRIMARY KEY,
@@ -28,7 +28,7 @@ def init_db():
         );
     """)
 
-    # tabla de transacciones (NUEVA)
+    # transacciones
     cur.execute("""
         CREATE TABLE IF NOT EXISTS transactions (
             id SERIAL PRIMARY KEY,
@@ -39,7 +39,7 @@ def init_db():
         );
     """)
 
-    # asegurar fila única en app_data
+    # asegurar fila única
     cur.execute("SELECT COUNT(*) FROM app_data;")
     count = cur.fetchone()[0]
 
@@ -55,7 +55,7 @@ def init_db():
 
 
 # =========================
-# 📊 ESTADO GENERAL (JSON)
+# 📊 ESTADO GENERAL
 # =========================
 def get_data():
     conn = get_connection()
@@ -126,3 +126,58 @@ def get_transactions(limit=4):
         })
 
     return result[::-1]
+
+
+# =========================
+# ❌ DESHACER ÚLTIMA TRANSACCIÓN
+# =========================
+def delete_last_transaction():
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT id, pagador, asistentes, cantidad
+        FROM transactions
+        ORDER BY id DESC
+        LIMIT 1;
+    """)
+
+    row = cur.fetchone()
+
+    if not row:
+        conn.close()
+        return None
+
+    tx_id, pagador, asistentes, cantidad = row
+
+    cur.execute("DELETE FROM transactions WHERE id = %s;", [tx_id])
+
+    conn.commit()
+    cur.close()
+    conn.close()
+
+    return {
+        "pagador": pagador,
+        "asistentes": asistentes.split(",") if asistentes else [],
+        "cantidad": cantidad
+    }
+
+
+# =========================
+# 🔁 REVERTIR EFECTO EN DATOS
+# =========================
+def revert_transaction(data, tx):
+    pagador = tx["pagador"]
+    asistentes = tx["asistentes"]
+    cantidad = tx["cantidad"]
+
+    # revertir consumos
+    for a in asistentes:
+        if a in data:
+            data[a]["consumido"] -= 1
+
+    # revertir pago
+    if pagador in data:
+        data[pagador]["pagado"] -= cantidad
+
+    return data

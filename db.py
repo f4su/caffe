@@ -19,7 +19,9 @@ def init_db():
     conn = get_connection()
     cur = conn.cursor()
 
-    # estado global
+    # =========================
+    # 🧠 estado global
+    # =========================
     cur.execute("""
         CREATE TABLE IF NOT EXISTS app_data (
             id SERIAL PRIMARY KEY,
@@ -27,7 +29,9 @@ def init_db():
         );
     """)
 
-    # historial de eventos (APPEND ONLY)
+    # =========================
+    # 🧾 transacciones reales
+    # =========================
     cur.execute("""
         CREATE TABLE IF NOT EXISTS transactions (
             id SERIAL PRIMARY KEY,
@@ -38,7 +42,19 @@ def init_db():
         );
     """)
 
-    # asegurar fila única
+    # =========================
+    # 📌 eventos (timeline visual)
+    # =========================
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS events (
+            id SERIAL PRIMARY KEY,
+            type TEXT NOT NULL,
+            message TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT NOW()
+        );
+    """)
+
+    # asegurar estado inicial
     cur.execute("SELECT COUNT(*) FROM app_data;")
     count = cur.fetchone()[0]
 
@@ -84,7 +100,7 @@ def save_data(data):
 
 
 # =========================
-# 🧾 EVENTOS (HISTORIAL)
+# 🧾 TRANSACCIONES
 # =========================
 def add_transaction(pagador, asistentes, cantidad):
     conn = get_connection()
@@ -116,19 +132,57 @@ def get_transactions(limit=4):
     cur.close()
     conn.close()
 
-    result = []
-    for r in rows:
-        result.append({
+    return [
+        {
             "pagador": r[0],
             "asistentes": r[1].split(",") if r[1] else [],
             "cantidad": r[2]
-        })
-
-    return result[::-1]
+        }
+        for r in rows
+    ][::-1]
 
 
 # =========================
-# ❌ BORRAR ÚLTIMO (UNDO REAL)
+# 📌 EVENTOS (TIMELINE VISUAL)
+# =========================
+def add_event(event_type, message):
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+        INSERT INTO events (type, message)
+        VALUES (%s, %s);
+    """, [event_type, message])
+
+    conn.commit()
+    cur.close()
+    conn.close()
+
+
+def get_events(limit=20):
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT type, message
+        FROM events
+        ORDER BY id DESC
+        LIMIT %s;
+    """, [limit])
+
+    rows = cur.fetchall()
+
+    cur.close()
+    conn.close()
+
+    return [
+        {"type": r[0], "message": r[1]}
+        for r in rows
+    ][::-1]
+
+
+# =========================
+# ❌ UNDO ÚLTIMA TRANSACCIÓN
 # =========================
 def delete_last_transaction():
     conn = get_connection()
@@ -149,8 +203,7 @@ def delete_last_transaction():
 
     tx_id, pagador, asistentes, cantidad = row
 
-    # ❌ aquí ya NO borramos ni marcamos nada
-    # solo devolvemos el evento para revertir lógica
+    # borrado real (como pediste)
     cur.execute("DELETE FROM transactions WHERE id = %s;", [tx_id])
 
     conn.commit()
@@ -177,9 +230,15 @@ def revert_transaction(data, tx):
 
     for a in asistentes:
         if a in data:
-            data[a]["consumido"] = max(0, data[a].get("consumido", 0) - 1)
+            data[a]["consumido"] = max(
+                0,
+                data[a].get("consumido", 0) - 1
+            )
 
     if pagador in data:
-        data[pagador]["pagado"] = max(0, data[pagador].get("pagado", 0) - cantidad)
+        data[pagador]["pagado"] = max(
+            0,
+            data[pagador].get("pagado", 0) - cantidad
+        )
 
     return data

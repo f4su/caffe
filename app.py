@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect, flash
 import random
+from datetime import datetime
 from db import (
     init_db,
     get_data,
@@ -31,6 +32,30 @@ CONSUMOS = {
 PERSONAS = list(CONSUMOS.keys())
 
 
+# =========================
+# 📅 FORMATO FECHA ESPAÑOL
+# =========================
+MESES = [
+    "enero", "febrero", "marzo", "abril", "mayo", "junio",
+    "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"
+]
+
+DIAS = [
+    "lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"
+]
+
+
+def fecha_formateada():
+    now = datetime.now()
+    dia_semana = DIAS[now.weekday()]
+    dia = now.day
+    mes = MESES[now.month - 1]
+    return f"{dia_semana}, {dia} {mes}"
+
+
+# =========================
+# 🔄 LOAD
+# =========================
 def load():
     data = get_data() or {}
 
@@ -64,6 +89,9 @@ def sugerir_pagador(data, asistentes):
     return random.choice(candidatos)
 
 
+# =========================
+# 🌐 HOME
+# =========================
 @app.route("/")
 def index():
     data = load()
@@ -77,10 +105,13 @@ def index():
         asistentes=[],
         data=data,
         transactions=transactions,
-        events=events   # 🔥 FIX CLAVE
+        events=events
     )
 
 
+# =========================
+# 👀 PREVIEW
+# =========================
 @app.route("/preview", methods=["POST"])
 def preview():
     data = load()
@@ -110,6 +141,9 @@ def preview():
     )
 
 
+# =========================
+# ☕ REGISTRAR CAFÉ
+# =========================
 @app.route("/registrar", methods=["POST"])
 def registrar():
     data = load()
@@ -133,9 +167,13 @@ def registrar():
     save(data)
     add_transaction(pagador, asistentes, cantidad)
 
+    fecha = fecha_formateada()
+
+    asistentes_sin_pagador = [a for a in asistentes if a != pagador]
+
     add_event(
         "ok",
-        f"{pagador} pagó {cantidad} cafés a {', '.join([a for a in asistentes if a != pagador])}"
+        f"{fecha}: {pagador} pagó {cantidad} cafés a: {', '.join(asistentes_sin_pagador)}"
     )
 
     flash(f"☕ Café registrado: {pagador} pagó {cantidad} cafés")
@@ -143,6 +181,9 @@ def registrar():
     return redirect("/")
 
 
+# =========================
+# ❌ UNDO
+# =========================
 @app.route("/undo", methods=["POST"])
 def undo():
     data = load()
@@ -153,9 +194,11 @@ def undo():
         data = revert_transaction(data, tx)
         save(data)
 
+        fecha = fecha_formateada()
+
         add_event(
             "undo",
-            f"Cancelado último café de {tx['pagador']} ({tx['cantidad']} cafés)"
+            f"{fecha}: cancelado café de {tx['pagador']} ({tx['cantidad']} cafés)"
         )
 
         flash(f"❌ Último café cancelado: {tx['pagador']}")

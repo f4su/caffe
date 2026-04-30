@@ -85,16 +85,15 @@
 
         <ul>
 
-            <!-- 🧾 TRANSACCIONES (últimas 7 visibles) -->
+            <!-- 🧾 SOLO ÚLTIMOS 7 -->
             {% for t in transactions[-7:] %}
                 <li>
-                    <b>{{ t.pagador }}</b>
-                    pagó {{ t.cantidad }} cafés a:<br>
-                    {{ t.asistentes | join(", ") }}
+                    ☕ <b>{{ t.pagador }}</b> pagó {{ t.cantidad }} cafés a:<br>
+                    &nbsp;&nbsp;&nbsp;{{ t.asistentes | join(", ") }}
                 </li>
             {% endfor %}
 
-            <!-- 📌 EVENTOS (logs visuales) -->
+            <!-- 📌 SOLO ÚLTIMOS 7 EVENTOS -->
             {% for e in events[-7:] %}
                 {% if e.type == "undo" %}
                     <li style="color:#e74c3c;">
@@ -193,7 +192,7 @@
     <div style="background:white; padding:20px; border-radius:10px; width:300px; text-align:center;">
 
         <h3>⚠️ ¿Seguro que quieres borrar el último log?</h3>
-        <p>Se revertirá la última compra, pero quedará registrada en el historial visual.</p>
+        <p>Se revertirá la última compra, pero el historial se mantendrá.</p>
 
         <div style="display:flex; justify-content:space-between; margin-top:20px;">
 

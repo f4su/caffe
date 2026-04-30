@@ -2,7 +2,12 @@ import psycopg2
 import os
 import json
 
-DATABASE_URL = os.environ.get("DATABASE_URL")
+# 🔥 Leer variable de entorno de forma segura
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+# 🚨 Fail rápido si no está configurada (MUY IMPORTANTE)
+if not DATABASE_URL:
+    raise Exception("❌ DATABASE_URL no está configurada en Render")
 
 
 def get_connection():
@@ -20,8 +25,11 @@ def init_db():
         );
     """)
 
-    cur.execute("SELECT * FROM app_data LIMIT 1;")
-    if cur.fetchone() is None:
+    # ⚠️ asegurar que exista una fila única
+    cur.execute("SELECT COUNT(*) FROM app_data;")
+    count = cur.fetchone()[0]
+
+    if count == 0:
         cur.execute("INSERT INTO app_data (data) VALUES (%s);", [json.dumps({})])
 
     conn.commit()
@@ -39,14 +47,17 @@ def get_data():
     cur.close()
     conn.close()
 
-    return row[0] if row else {}
+    return row[0] if row and row[0] else {}
 
 
 def save_data(data):
     conn = get_connection()
     cur = conn.cursor()
 
-    cur.execute("UPDATE app_data SET data = %s WHERE id = 1;", [json.dumps(data)])
+    cur.execute(
+        "UPDATE app_data SET data = %s WHERE id = 1;",
+        [json.dumps(data)]
+    )
 
     conn.commit()
     cur.close()

@@ -33,7 +33,7 @@ PERSONAS = list(CONSUMOS.keys())
 
 
 # =========================
-# 📅 FORMATO FECHA ESPAÑOL
+# 📅 FECHA FORMATEADA
 # =========================
 MESES = [
     "enero", "febrero", "marzo", "abril", "mayo", "junio",
@@ -47,10 +47,7 @@ DIAS = [
 
 def fecha_formateada():
     now = datetime.now()
-    dia_semana = DIAS[now.weekday()]
-    dia = now.day
-    mes = MESES[now.month - 1]
-    return f"{dia_semana}, {dia} {mes}"
+    return f"{DIAS[now.weekday()]}, {now.day} {MESES[now.month - 1]}"
 
 
 # =========================
@@ -95,8 +92,9 @@ def sugerir_pagador(data, asistentes):
 @app.route("/")
 def index():
     data = load()
+
     transactions = get_transactions()
-    events = get_events()
+    events = get_events(limit=7)   # 🔥 SOLO ÚLTIMOS 7
 
     return render_template(
         "index.html",
@@ -125,7 +123,7 @@ def preview():
             asistentes=[],
             data=data,
             transactions=get_transactions(),
-            events=get_events()
+            events=get_events(limit=7)
         )
 
     sugerido = sugerir_pagador(data, asistentes)
@@ -137,7 +135,7 @@ def preview():
         asistentes=asistentes,
         data=data,
         transactions=get_transactions(),
-        events=get_events()
+        events=get_events(limit=7)
     )
 
 
@@ -168,7 +166,6 @@ def registrar():
     add_transaction(pagador, asistentes, cantidad)
 
     fecha = fecha_formateada()
-
     asistentes_sin_pagador = [a for a in asistentes if a != pagador]
 
     add_event(

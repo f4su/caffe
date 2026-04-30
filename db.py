@@ -2,7 +2,6 @@ import psycopg2
 import os
 import json
 
-# 🔥 Variable de entorno
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 if not DATABASE_URL:
@@ -20,7 +19,7 @@ def init_db():
     conn = get_connection()
     cur = conn.cursor()
 
-    # estado global (JSON)
+    # estado global
     cur.execute("""
         CREATE TABLE IF NOT EXISTS app_data (
             id SERIAL PRIMARY KEY,
@@ -28,34 +27,18 @@ def init_db():
         );
     """)
 
-    # transacciones (SOFT DELETE con canceled)
+    # historial de eventos (APPEND ONLY)
     cur.execute("""
         CREATE TABLE IF NOT EXISTS transactions (
             id SERIAL PRIMARY KEY,
             pagador TEXT NOT NULL,
             asistentes TEXT NOT NULL,
             cantidad INTEGER NOT NULL,
-            canceled BOOLEAN DEFAULT FALSE,
             created_at TIMESTAMP DEFAULT NOW()
         );
     """)
 
-    # 🔧 MIGRACIÓN SEGURA (IMPORTANTE PARA RENDER)
-    # si la tabla ya existía antes sin "canceled", la añadimos
-    cur.execute("""
-        DO $$
-        BEGIN
-            IF NOT EXISTS (
-                SELECT 1
-                FROM information_schema.columns
-                WHERE table_name='transactions' AND column_name='canceled'
-            ) THEN
-                ALTER TABLE transactions ADD COLUMN canceled BOOLEAN DEFAULT FALSE;
-            END IF;
-        END $$;
-    """)
-
-    # asegurar fila única en app_data
+    # asegurar fila única
     cur.execute("SELECT COUNT(*) FROM app_data;")
     count = cur.fetchone()[0]
 
@@ -101,7 +84,7 @@ def save_data(data):
 
 
 # =========================
-# 🧾 TRANSACCIONES
+# 🧾 EVENTOS (HISTORIAL)
 # =========================
 def add_transaction(pagador, asistentes, cantidad):
     conn = get_connection()
@@ -121,11 +104,9 @@ def get_transactions(limit=4):
     conn = get_connection()
     cur = conn.cursor()
 
-    # 🔥 IMPORTANTE: filtramos solo activas
     cur.execute("""
-        SELECT pagador, asistentes, cantidad, canceled
+        SELECT pagador, asistentes, cantidad
         FROM transactions
-        WHERE canceled = FALSE
         ORDER BY id DESC
         LIMIT %s;
     """, [limit])
@@ -140,25 +121,22 @@ def get_transactions(limit=4):
         result.append({
             "pagador": r[0],
             "asistentes": r[1].split(",") if r[1] else [],
-            "cantidad": r[2],
-            "canceled": r[3]
+            "cantidad": r[2]
         })
 
     return result[::-1]
 
 
 # =========================
-# ❌ BORRAR ÚLTIMA TRANSACCIÓN (SOFT DELETE)
+# ❌ BORRAR ÚLTIMO (UNDO REAL)
 # =========================
 def delete_last_transaction():
     conn = get_connection()
     cur = conn.cursor()
 
-    # solo las activas
     cur.execute("""
         SELECT id, pagador, asistentes, cantidad
         FROM transactions
-        WHERE canceled = FALSE
         ORDER BY id DESC
         LIMIT 1;
     """)
@@ -171,12 +149,9 @@ def delete_last_transaction():
 
     tx_id, pagador, asistentes, cantidad = row
 
-    # marcar como cancelada (NO borrar)
-    cur.execute("""
-        UPDATE transactions
-        SET canceled = TRUE
-        WHERE id = %s;
-    """, [tx_id])
+    # ❌ aquí ya NO borramos ni marcamos nada
+    # solo devolvemos el evento para revertir lógica
+    cur.execute("DELETE FROM transactions WHERE id = %s;", [tx_id])
 
     conn.commit()
     cur.close()
@@ -190,7 +165,7 @@ def delete_last_transaction():
 
 
 # =========================
-# 🔁 REVERTIR EFECTO EN DATOS
+# 🔁 REVERTIR ESTADO
 # =========================
 def revert_transaction(data, tx):
     if not tx:
@@ -200,12 +175,10 @@ def revert_transaction(data, tx):
     asistentes = tx["asistentes"]
     cantidad = tx["cantidad"]
 
-    # revertir consumos
     for a in asistentes:
         if a in data:
             data[a]["consumido"] = max(0, data[a].get("consumido", 0) - 1)
 
-    # revertir pago
     if pagador in data:
         data[pagador]["pagado"] = max(0, data[pagador].get("pagado", 0) - cantidad)
 

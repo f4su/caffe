@@ -3,100 +3,39 @@
 <head>
     <title>Café balance</title>
 </head>
+
 <body>
 
 <h1>☕ Cafés equilibrados</h1>
 
-<!-- CAFÉS PAGADOS -->
-<h3>☕ Cafés pagados</h3>
-<ul>
-    {% for p in personas %}
-        <li>
-            {{ p }} → {{ data[p]["pagado"] }} cafés pagados
-        </li>
-    {% endfor %}
-</ul>
+<!-- CONTENEDOR PRINCIPAL -->
+<div style="display:flex; gap:20px; align-items:flex-start;">
 
-<!-- 🔧 BOTÓN AJUSTE -->
-<button onclick="document.getElementById('ajuste').style.display='block'">
-    ⚙️ Ajustar cafés
-</button>
-
-<!-- 🔧 PANEL AJUSTE -->
-<div id="ajuste" style="display:none; border:1px solid black; padding:10px; margin-top:10px; width:250px;">
-
-    <h4>Ajustar cafés pagados</h4>
-
-    <form action="/ajustar" method="post">
-
-        <label>Persona:</label>
-        <select name="persona">
+    <!-- IZQUIERDA: CAFÉS PAGADOS -->
+    <div style="border:1px solid #ccc; padding:10px; width:300px;">
+        <h3>☕ Cafés pagados</h3>
+        <ul>
             {% for p in personas %}
-                <option value="{{ p }}">{{ p }}</option>
+                <li>
+                    {{ p }} → {{ data[p]["pagado"] }} cafés pagados
+                </li>
             {% endfor %}
-        </select>
+        </ul>
+    </div>
 
-        <br><br>
+    <!-- DERECHA: TRANSACCIONES -->
+    <div style="border:1px solid #ccc; padding:10px; width:400px;">
+        <h3>🧾 Últimos pagos</h3>
 
-        <label>Restar cafés:</label>
-        <input type="number" name="cantidad" min="1" value="1">
+        <ul>
+            {% for t in transactions %}
+                <li>
+                    <b>{{ t.pagador }}</b>
+                    pagó {{ t.cantidad }} cafés a:
+                    {{ t.asistentes | join(", ") }}
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
 
-        <br><br>
-
-        <button type="submit">Guardar</button>
-        <button type="button" onclick="document.getElementById('ajuste').style.display='none'">
-            Cancelar
-        </button>
-
-    </form>
 </div>
-
-<hr>
-
-<h3>1. Selecciona asistentes</h3>
-
-<form action="/preview" method="post">
-
-    {% for p in personas %}
-        <input type="checkbox" name="asistentes" value="{{ p }}"
-        {% if asistentes and p in asistentes %}checked{% endif %}>
-        {{ p }} <br>
-    {% endfor %}
-
-    <br>
-    <button type="submit">Calcular sugerencia</button>
-</form>
-
-<hr>
-
-{% if sugerido %}
-
-<h3>2. Confirmar pagador</h3>
-
-<form action="/registrar" method="post">
-
-    {% for p in asistentes %}
-        <input type="hidden" name="asistentes" value="{{ p }}">
-    {% endfor %}
-
-    <label>Pagador:</label>
-    <select name="pagador">
-
-        {% for p in asistentes %}
-            <option value="{{ p }}"
-            {% if p == sugerido %}selected{% endif %}>
-                {{ p }}
-            </option>
-        {% endfor %}
-
-    </select>
-
-    <br><br>
-
-    <button type="submit">Registrar café</button>
-</form>
-
-{% endif %}
-
-</body>
-</html>

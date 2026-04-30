@@ -28,7 +28,7 @@ def init_db():
         );
     """)
 
-    # transacciones (ahora con canceled)
+    # transacciones (SOFT DELETE con canceled)
     cur.execute("""
         CREATE TABLE IF NOT EXISTS transactions (
             id SERIAL PRIMARY KEY,
@@ -40,7 +40,22 @@ def init_db():
         );
     """)
 
-    # asegurar fila única
+    # 🔧 MIGRACIÓN SEGURA (IMPORTANTE PARA RENDER)
+    # si la tabla ya existía antes sin "canceled", la añadimos
+    cur.execute("""
+        DO $$
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1
+                FROM information_schema.columns
+                WHERE table_name='transactions' AND column_name='canceled'
+            ) THEN
+                ALTER TABLE transactions ADD COLUMN canceled BOOLEAN DEFAULT FALSE;
+            END IF;
+        END $$;
+    """)
+
+    # asegurar fila única en app_data
     cur.execute("SELECT COUNT(*) FROM app_data;")
     count = cur.fetchone()[0]
 
@@ -106,9 +121,11 @@ def get_transactions(limit=4):
     conn = get_connection()
     cur = conn.cursor()
 
+    # 🔥 IMPORTANTE: filtramos solo activas
     cur.execute("""
         SELECT pagador, asistentes, cantidad, canceled
         FROM transactions
+        WHERE canceled = FALSE
         ORDER BY id DESC
         LIMIT %s;
     """, [limit])
@@ -137,6 +154,7 @@ def delete_last_transaction():
     conn = get_connection()
     cur = conn.cursor()
 
+    # solo las activas
     cur.execute("""
         SELECT id, pagador, asistentes, cantidad
         FROM transactions
@@ -153,7 +171,7 @@ def delete_last_transaction():
 
     tx_id, pagador, asistentes, cantidad = row
 
-    # ❌ NO BORRAR → marcar como cancelado
+    # marcar como cancelada (NO borrar)
     cur.execute("""
         UPDATE transactions
         SET canceled = TRUE

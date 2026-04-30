@@ -1,6 +1,14 @@
 from flask import Flask, render_template, request, redirect
 import random
-from db import init_db, get_data, save_data, add_transaction, get_transactions
+from db import (
+    init_db,
+    get_data,
+    save_data,
+    add_transaction,
+    get_transactions,
+    delete_last_transaction,
+    revert_transaction
+)
 
 app = Flask(__name__)
 
@@ -57,6 +65,9 @@ def sugerir_pagador(data, asistentes):
     return random.choice(candidatos)
 
 
+# =========================
+# 🌐 VISTA PRINCIPAL
+# =========================
 @app.route("/")
 def index():
     data = load()
@@ -72,6 +83,9 @@ def index():
     )
 
 
+# =========================
+# 👀 PREVIEW
+# =========================
 @app.route("/preview", methods=["POST"])
 def preview():
     data = load()
@@ -99,6 +113,9 @@ def preview():
     )
 
 
+# =========================
+# ☕ REGISTRAR PAGO
+# =========================
 @app.route("/registrar", methods=["POST"])
 def registrar():
     data = load()
@@ -122,5 +139,21 @@ def registrar():
 
     # 🧾 guardar transacción
     add_transaction(pagador, asistentes, cantidad)
+
+    return redirect("/")
+
+
+# =========================
+# ❌ DESHACER ÚLTIMO PAGO
+# =========================
+@app.route("/undo", methods=["POST"])
+def undo():
+    data = load()
+
+    tx = delete_last_transaction()
+
+    if tx:
+        data = revert_transaction(data, tx)
+        save(data)
 
     return redirect("/")

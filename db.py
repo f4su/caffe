@@ -54,7 +54,9 @@ def init_db():
         );
     """)
 
-    # asegurar estado inicial
+    # =========================
+    # 🔧 asegurar estado inicial
+    # =========================
     cur.execute("SELECT COUNT(*) FROM app_data;")
     count = cur.fetchone()[0]
 
@@ -116,7 +118,7 @@ def add_transaction(pagador, asistentes, cantidad):
     conn.close()
 
 
-def get_transactions(limit=4):
+def get_transactions(limit=7):
     conn = get_connection()
     cur = conn.cursor()
 
@@ -182,7 +184,7 @@ def get_events(limit=20):
 
 
 # =========================
-# ❌ UNDO ÚLTIMA TRANSACCIÓN
+# ❌ BORRAR ÚLTIMA TRANSACCIÓN
 # =========================
 def delete_last_transaction():
     conn = get_connection()
@@ -203,7 +205,6 @@ def delete_last_transaction():
 
     tx_id, pagador, asistentes, cantidad = row
 
-    # borrado real (como pediste)
     cur.execute("DELETE FROM transactions WHERE id = %s;", [tx_id])
 
     conn.commit()

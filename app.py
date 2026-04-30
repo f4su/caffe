@@ -1,8 +1,5 @@
 from flask import Flask, render_template, request, redirect, flash
 import random
-from datetime import datetime
-import calendar
-
 from db import (
     init_db,
     get_data,
@@ -10,15 +7,15 @@ from db import (
     add_transaction,
     get_transactions,
     delete_last_transaction,
-    revert_transaction
+    revert_transaction,
+    add_event,
+    get_events
 )
 
 app = Flask(__name__)
 
-# 🔐 necesario para flash messages
 app.secret_key = "cafe_secret_key"
 
-# inicializar DB
 init_db()
 
 CONSUMOS = {
@@ -34,9 +31,6 @@ CONSUMOS = {
 PERSONAS = list(CONSUMOS.keys())
 
 
-# =========================
-# 🔄 CARGAR DATOS
-# =========================
 def load():
     data = get_data() or {}
 
@@ -47,9 +41,6 @@ def load():
     return data
 
 
-# =========================
-# 💾 GUARDAR DATOS
-# =========================
 def save(data):
     save_data(data)
 
@@ -58,9 +49,6 @@ def balance(data, p):
     return data[p]["pagado"] - data[p]["consumido"]
 
 
-# =========================
-# 🔥 SUGERENCIA
-# =========================
 def sugerir_pagador(data, asistentes):
     balances = {p: balance(data, p) for p in asistentes}
 
@@ -76,13 +64,11 @@ def sugerir_pagador(data, asistentes):
     return random.choice(candidatos)
 
 
-# =========================
-# 🌐 HOME
-# =========================
 @app.route("/")
 def index():
     data = load()
     transactions = get_transactions()
+    events = get_events()
 
     return render_template(
         "index.html",
@@ -90,13 +76,11 @@ def index():
         sugerido=None,
         asistentes=[],
         data=data,
-        transactions=transactions
+        transactions=transactions,
+        events=events   # 🔥 FIX CLAVE
     )
 
 
-# =========================
-# 👀 PREVIEW
-# =========================
 @app.route("/preview", methods=["POST"])
 def preview():
     data = load()
@@ -109,7 +93,8 @@ def preview():
             sugerido=None,
             asistentes=[],
             data=data,
-            transactions=get_transactions()
+            transactions=get_transactions(),
+            events=get_events()
         )
 
     sugerido = sugerir_pagador(data, asistentes)
@@ -120,13 +105,11 @@ def preview():
         sugerido=sugerido,
         asistentes=asistentes,
         data=data,
-        transactions=get_transactions()
+        transactions=get_transactions(),
+        events=get_events()
     )
 
 
-# =========================
-# ☕ REGISTRAR CAFÉ
-# =========================
 @app.route("/registrar", methods=["POST"])
 def registrar():
     data = load()
@@ -137,48 +120,29 @@ def registrar():
     if pagador not in asistentes:
         asistentes.append(pagador)
 
-    # 🚫 excluir pagador del listado visual
-    asistentes_sin_pagador = [a for a in asistentes if a != pagador]
-
     n = len(asistentes)
     cantidad = n - 1
 
-    # actualizar consumos
     for a in asistentes:
         if a in data:
             data[a]["consumido"] += 1
 
-    # actualizar pagos
     if pagador in data:
         data[pagador]["pagado"] += cantidad
 
     save(data)
-
-    # 🧾 guardar evento real
     add_transaction(pagador, asistentes, cantidad)
 
-    # 📅 fecha formateada
-    now = datetime.now()
-    dia = now.day
-    mes_num = now.month
-    mes_nombre = calendar.month_name[mes_num].upper()
-
-    asistentes_txt = ", ".join(asistentes_sin_pagador) if asistentes_sin_pagador else "nadie"
-
-    mensaje = (
-        f"{dia}, {mes_num} {mes_nombre}: "
-        f"{pagador} pagó {cantidad} cafés a:\n"
-        f"{asistentes_txt}"
+    add_event(
+        "ok",
+        f"{pagador} pagó {cantidad} cafés a {', '.join([a for a in asistentes if a != pagador])}"
     )
 
-    flash(mensaje)
+    flash(f"☕ Café registrado: {pagador} pagó {cantidad} cafés")
 
     return redirect("/")
 
 
-# =========================
-# ❌ UNDO ÚLTIMO LOG
-# =========================
 @app.route("/undo", methods=["POST"])
 def undo():
     data = load()
@@ -186,20 +150,14 @@ def undo():
     tx = delete_last_transaction()
 
     if tx:
-        # revertir estado real
         data = revert_transaction(data, tx)
         save(data)
 
-        # evento visual de cancelación
-        add_transaction(
-            pagador="❌ CANCELADO",
-            asistentes=tx["asistentes"],
-            cantidad=0
+        add_event(
+            "undo",
+            f"Cancelado último café de {tx['pagador']} ({tx['cantidad']} cafés)"
         )
 
-        flash(
-            f"❌ Último café cancelado: "
-            f"{tx['pagador']} pagó {tx['cantidad']} cafés"
-        )
+        flash(f"❌ Último café cancelado: {tx['pagador']}")
 
     return redirect("/")

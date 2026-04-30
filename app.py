@@ -93,17 +93,14 @@ def sugerir_pagador(data, asistentes):
 def index():
     data = load()
 
-    transactions = get_transactions()
-    events = get_events(limit=7)   # 🔥 SOLO ÚLTIMOS 7
-
     return render_template(
         "index.html",
         personas=PERSONAS,
         sugerido=None,
         asistentes=[],
         data=data,
-        transactions=transactions,
-        events=events
+        transactions=get_transactions(),
+        events=get_events(limit=7)   # 🔥 SOLO ÚLTIMOS 7
     )
 
 

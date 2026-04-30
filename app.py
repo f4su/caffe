@@ -49,7 +49,7 @@ def balance(data, p):
     return data[p]["pagado"] - data[p]["consumido"]
 
 
-# 🔥 LÓGICA MEJORADA DE SUGERENCIA
+# 🔥 LÓGICA DE SUGERENCIA
 def sugerir_pagador(data, asistentes):
     balances = {p: balance(data, p) for p in asistentes}
 
@@ -129,11 +129,14 @@ def registrar():
     n = len(asistentes)
     cantidad = n - 1
 
-    # actualizar lógica de cafés
+    # actualizar consumos
     for a in asistentes:
-        data[a]["consumido"] += 1
+        if a in data:
+            data[a]["consumido"] += 1
 
-    data[pagador]["pagado"] += cantidad
+    # actualizar pagos
+    if pagador in data:
+        data[pagador]["pagado"] += cantidad
 
     save(data)
 
@@ -144,7 +147,7 @@ def registrar():
 
 
 # =========================
-# ❌ DESHACER ÚLTIMO PAGO
+# ❌ BORRAR ÚLTIMO LOG (UNDO)
 # =========================
 @app.route("/undo", methods=["POST"])
 def undo():

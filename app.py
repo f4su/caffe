@@ -148,8 +148,10 @@ def registrar():
 
     save(data)
 
-    # guardar transacción
+    # 🧾 evento de historial
     add_transaction(pagador, asistentes, cantidad)
+
+    flash(f"☕ Café registrado: {pagador} pagó {cantidad} cafés")
 
     return redirect("/")
 
@@ -164,10 +166,17 @@ def undo():
     tx = delete_last_transaction()
 
     if tx:
+        # revertir estado real
         data = revert_transaction(data, tx)
         save(data)
 
-        # 🔔 mensaje visible en UI
-        flash(f"Se ha deshecho el último pago: {tx['pagador']} pagó {tx['cantidad']} cafés")
+        # 🧾 evento de historial (cancelación visible)
+        add_transaction(
+            pagador="❌ CANCELADO",
+            asistentes=tx["asistentes"],
+            cantidad=-tx["cantidad"]
+        )
+
+        flash(f"❌ Se ha cancelado el último café de {tx['pagador']}")
 
     return redirect("/")

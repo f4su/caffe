@@ -129,7 +129,7 @@ def get_transactions(limit=4):
 
 
 # =========================
-# ❌ DESHACER ÚLTIMA TRANSACCIÓN
+# ❌ BORRAR ÚLTIMA TRANSACCIÓN
 # =========================
 def delete_last_transaction():
     conn = get_connection()
@@ -164,9 +164,12 @@ def delete_last_transaction():
 
 
 # =========================
-# 🔁 REVERTIR EFECTO EN DATOS
+# 🔁 REVERTIR TRANSACCIÓN
 # =========================
 def revert_transaction(data, tx):
+    if not tx:
+        return data
+
     pagador = tx["pagador"]
     asistentes = tx["asistentes"]
     cantidad = tx["cantidad"]
@@ -174,10 +177,10 @@ def revert_transaction(data, tx):
     # revertir consumos
     for a in asistentes:
         if a in data:
-            data[a]["consumido"] -= 1
+            data[a]["consumido"] = max(0, data[a].get("consumido", 0) - 1)
 
     # revertir pago
     if pagador in data:
-        data[pagador]["pagado"] -= cantidad
+        data[pagador]["pagado"] = max(0, data[pagador].get("pagado", 0) - cantidad)
 
     return data

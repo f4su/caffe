@@ -31,7 +31,7 @@
 {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
         {% for category, message in messages %}
-            <div class="popup {% if category == 'error' %}error{% endif %}" id="popup">
+            <div class="popup {% if category == 'error' %}error{% endif %}">
                 {{ message }}
             </div>
 
@@ -65,12 +65,12 @@
         <h3 style="display:flex; justify-content:space-between; align-items:center;">
             🧾 Historial
 
-            <form action="/undo" method="post" style="margin:0;">
-                <button type="submit"
-                        style="background:red; color:white; border:none; padding:5px 10px; cursor:pointer;">
-                    Borrar último log
-                </button>
-            </form>
+            <!-- BOTÓN ABRIR MODAL -->
+            <button type="button"
+                    onclick="document.getElementById('confirmDelete').style.display='flex'"
+                    style="background:red; color:white; border:none; padding:5px 10px; cursor:pointer;">
+                Borrar último log
+            </button>
         </h3>
 
         <ul>
@@ -145,6 +145,47 @@
 
     {% endif %}
 
+</div>
+
+<!-- ========================= -->
+<!-- MODAL CONFIRMACIÓN BORRAR -->
+<!-- ========================= -->
+<div id="confirmDelete"
+     style="display:none;
+            position:fixed;
+            top:0;
+            left:0;
+            width:100%;
+            height:100%;
+            background:rgba(0,0,0,0.5);
+            justify-content:center;
+            align-items:center;
+            z-index:10000;">
+
+    <div style="background:white; padding:20px; border-radius:10px; width:300px; text-align:center;">
+
+        <h3>⚠️ ¿Seguro que quieres borrar el último log?</h3>
+        <p>Esta acción revertirá el último pago realizado.</p>
+
+        <div style="display:flex; justify-content:space-between; margin-top:20px;">
+
+            <!-- CANCELAR -->
+            <button onclick="document.getElementById('confirmDelete').style.display='none'"
+                    style="padding:8px 12px;">
+                Cancelar
+            </button>
+
+            <!-- CONFIRMAR BORRADO -->
+            <form action="/undo" method="post" style="margin:0;">
+                <button type="submit"
+                        style="background:red; color:white; border:none; padding:8px 12px; cursor:pointer;">
+                    Borrar
+                </button>
+            </form>
+
+        </div>
+
+    </div>
 </div>
 
 </body>

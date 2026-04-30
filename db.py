@@ -28,13 +28,14 @@ def init_db():
         );
     """)
 
-    # transacciones
+    # transacciones (ahora con canceled)
     cur.execute("""
         CREATE TABLE IF NOT EXISTS transactions (
             id SERIAL PRIMARY KEY,
             pagador TEXT NOT NULL,
             asistentes TEXT NOT NULL,
             cantidad INTEGER NOT NULL,
+            canceled BOOLEAN DEFAULT FALSE,
             created_at TIMESTAMP DEFAULT NOW()
         );
     """)
@@ -106,7 +107,7 @@ def get_transactions(limit=4):
     cur = conn.cursor()
 
     cur.execute("""
-        SELECT pagador, asistentes, cantidad
+        SELECT pagador, asistentes, cantidad, canceled
         FROM transactions
         ORDER BY id DESC
         LIMIT %s;
@@ -122,14 +123,15 @@ def get_transactions(limit=4):
         result.append({
             "pagador": r[0],
             "asistentes": r[1].split(",") if r[1] else [],
-            "cantidad": r[2]
+            "cantidad": r[2],
+            "canceled": r[3]
         })
 
     return result[::-1]
 
 
 # =========================
-# ❌ BORRAR ÚLTIMA TRANSACCIÓN
+# ❌ BORRAR ÚLTIMA TRANSACCIÓN (SOFT DELETE)
 # =========================
 def delete_last_transaction():
     conn = get_connection()
@@ -138,6 +140,7 @@ def delete_last_transaction():
     cur.execute("""
         SELECT id, pagador, asistentes, cantidad
         FROM transactions
+        WHERE canceled = FALSE
         ORDER BY id DESC
         LIMIT 1;
     """)
@@ -150,7 +153,12 @@ def delete_last_transaction():
 
     tx_id, pagador, asistentes, cantidad = row
 
-    cur.execute("DELETE FROM transactions WHERE id = %s;", [tx_id])
+    # ❌ NO BORRAR → marcar como cancelado
+    cur.execute("""
+        UPDATE transactions
+        SET canceled = TRUE
+        WHERE id = %s;
+    """, [tx_id])
 
     conn.commit()
     cur.close()
@@ -164,7 +172,7 @@ def delete_last_transaction():
 
 
 # =========================
-# 🔁 REVERTIR TRANSACCIÓN
+# 🔁 REVERTIR EFECTO EN DATOS
 # =========================
 def revert_transaction(data, tx):
     if not tx:

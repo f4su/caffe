@@ -76,28 +76,17 @@
         <h3 style="display:flex; justify-content:space-between; align-items:center;">
             🧾 Historial
 
-            <div style="display:flex; gap:10px;">
-
-                <!-- 🧹 LIMPIAR SOLO UI -->
-                <button type="button"
-                        onclick="clearHistoryUI()"
-                        style="background:#555; color:white; border:none; padding:5px 10px; cursor:pointer;">
-                    Limpiar
-                </button>
-
-                <!-- ❌ BORRAR ÚLTIMO LOG -->
-                <button type="button"
-                        onclick="document.getElementById('confirmDelete').style.display='flex'"
-                        style="background:red; color:white; border:none; padding:5px 10px; cursor:pointer;">
-                    Borrar último
-                </button>
-
-            </div>
+            <!-- SOLO BOTÓN BORRAR -->
+            <button type="button"
+                    onclick="document.getElementById('confirmDelete').style.display='flex'"
+                    style="background:red; color:white; border:none; padding:5px 10px; cursor:pointer;">
+                Borrar último
+            </button>
         </h3>
 
         <ul id="historyList">
 
-            <!-- 🧾 SOLO ÚLTIMOS 7 -->
+            <!-- 🧾 SOLO ÚLTIMOS 7 TRANSACCIONES -->
             {% for t in transactions[-7:] %}
                 <li>
                     ☕ <b>{{ t.pagador }}</b> pagó {{ t.cantidad }} cafés a:<br>
@@ -222,21 +211,6 @@
 
     </div>
 </div>
-
-<!-- ========================= -->
-<!-- JS LIMPIAR HISTORIAL UI -->
-<!-- ========================= -->
-<script>
-function clearHistoryUI() {
-    const ul = document.getElementById("historyList");
-
-    ul.innerHTML = `
-        <li style="color:#999;">
-            🧹 Historial limpiado (solo visualmente). Recarga la página para restaurarlo.
-        </li>
-    `;
-}
-</script>
 
 </body>
 </html>

@@ -7,6 +7,14 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 if not DATABASE_URL:
     raise Exception("❌ DATABASE_URL no está configurada en Render")
 
+# Si la URL usa el hostname interno de Render (solo funciona con la BD activa
+# y dentro de la red interna), lo sustituimos por el hostname externo para
+# que la conexión funcione siempre, incluso durante el export.
+_INTERNAL_HOST = "dpg-d7pfeukvikkc73adk83g-a"
+_EXTERNAL_HOST = "dpg-d7pfeukvikkc73adk83g-a.frankfurt-postgres.render.com"
+if _INTERNAL_HOST in DATABASE_URL and _EXTERNAL_HOST not in DATABASE_URL:
+    DATABASE_URL = DATABASE_URL.replace(_INTERNAL_HOST, _EXTERNAL_HOST)
+
 def get_connection():
     return psycopg2.connect(DATABASE_URL)
 
